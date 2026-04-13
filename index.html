@@ -1069,70 +1069,7 @@ html{-webkit-text-size-adjust:100%}body{margin:0;padding:0;overflow:hidden;touch
 <style>
 /* ═══════════════════════════════════════════════════════════════
    PCM ORGUEL — MOBILE FIRST ENHANCEMENT v4
-   Refatoração completa para mobile. Injetado antes de 
-<style id="pcm-finalizar-fix">
-/* ── Fix modal Finalizar OS ── */
-#mFinalizarOS {
-  align-items: flex-end !important;
-  padding: 0 !important;
-}
-#mFinalizarOS > .modal {
-  border-radius: 20px 20px 0 0 !important;
-  width: 100vw !important;
-  max-width: 100vw !important;
-  max-height: 85dvh !important;
-  max-height: 85vh !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  display: flex !important;
-  flex-direction: column !important;
-}
-/* Remove o pill/handle gerado pelo ::before do mobile CSS */
-#mFinalizarOS > .modal::before {
-  display: none !important;
-}
-#mFinalizarOS .fin-header {
-  flex-shrink: 0;
-  padding: 16px 20px 14px;
-  border-bottom: 1px solid rgba(16,185,129,.2);
-  background: linear-gradient(135deg,rgba(16,185,129,.12),rgba(5,150,105,.08));
-}
-#mFinalizarOS .fin-body {
-  flex: 1;
-  overflow-y: auto !important;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-  padding: 18px 20px;
-}
-#mFinalizarOS .fin-footer {
-  flex-shrink: 0;
-  padding: 12px 20px calc(12px + env(safe-area-inset-bottom,0px));
-  border-top: 1px solid var(--border);
-  background: var(--card);
-  display: flex;
-  gap: 10px;
-}
-#mFinalizarOS .fin-footer .btn-confirmar {
-  flex: 2;
-  background: linear-gradient(135deg,var(--green),#059669);
-  border: none;
-  border-radius: 12px;
-  padding: 14px;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: 'DM Mono', monospace;
-  letter-spacing: 1px;
-  min-height: 48px;
-}
-#mFinalizarOS .fin-footer .btn-cancelar {
-  flex: 1;
-}
-</style>
-
-</head>
+   Refatoração completa para mobile. Injetado antes de </head>
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── 1. RESET & BASE MOBILE ───────────────────────────────────── */
@@ -1971,6 +1908,61 @@ body{
 }
 
 </style>
+<style id="pcm-finalizar-fix">
+/* Fix modal Finalizar OS — sobrescreve CSS mobile com especificidade */
+#mFinalizarOS {
+  align-items: flex-end !important;
+  padding: 0 !important;
+}
+#mFinalizarOS > .modal {
+  border-radius: 20px 20px 0 0 !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  max-height: 85dvh !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+#mFinalizarOS > .modal::before { display: none !important; }
+#mFinalizarOS .fin-header {
+  flex-shrink: 0;
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid rgba(16,185,129,.2);
+  background: linear-gradient(135deg,rgba(16,185,129,.12),rgba(5,150,105,.08));
+}
+#mFinalizarOS .fin-body {
+  flex: 1 1 auto;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 18px 20px;
+  min-height: 0;
+}
+#mFinalizarOS .fin-footer {
+  flex-shrink: 0;
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom,0px));
+  border-top: 1px solid var(--border);
+  background: var(--card);
+  display: flex !important;
+  gap: 10px;
+}
+.btn-fin-confirmar {
+  flex: 2;
+  background: linear-gradient(135deg,var(--green),#059669) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 14px !important;
+  color: #fff !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 1px;
+  min-height: 48px !important;
+}
+.btn-fin-cancelar { flex: 1; }
+</style>
 </head>
 <body>
 
@@ -2143,9 +2135,8 @@ body{
 <!-- 🏁 Modal Finalizar OS com Assinatura -->
 <div class="overlay" id="mFinalizarOS" style="z-index:4500">
   <div class="modal">
-    <!-- cabeçalho -->
     <div class="fin-header">
-      <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--green)">✅ FINALIZAR OS</div>
           <div id="finOsInfo" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:3px">OS #— · NP —</div>
@@ -2153,7 +2144,6 @@ body{
         <button onclick="closeM('mFinalizarOS')" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:10px;width:34px;height:34px;font-size:16px;cursor:pointer;flex-shrink:0">✕</button>
       </div>
     </div>
-    <!-- corpo rolável -->
     <div class="fin-body">
       <div id="finOsResumo" style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.8;color:var(--text2)"></div>
       <div style="margin-bottom:16px">
@@ -2173,10 +2163,9 @@ body{
         <div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:'DM Mono',monospace">Assine com o dedo ou mouse para confirmar</div>
       </div>
     </div>
-    <!-- rodapé fixo com botões -->
     <div class="fin-footer">
-      <button onclick="closeM('mFinalizarOS')" class="btn btn-ghost btn-cancelar">Cancelar</button>
-      <button onclick="finOsConfirmar()" class="btn-confirmar">✅ CONFIRMAR FINALIZAÇÃO</button>
+      <button onclick="closeM('mFinalizarOS')" class="btn btn-ghost btn-fin-cancelar">Cancelar</button>
+      <button onclick="finOsConfirmar()" class="btn-fin-confirmar">✅ CONFIRMAR FINALIZAÇÃO</button>
     </div>
   </div>
 </div>
@@ -23666,17 +23655,15 @@ window.finOsConfirmar = async function(){
     }
   }catch(e){ console.warn('[PCM Notif] erro ao salvar no Supabase:',e); }
 
-  // Notificação local
   addNotif(notif);
-
-  // Banner in-app imediato
+  // Banner in-app
   try{
     var bEl=document.getElementById('pcm-push-banner');
-    var bIc=document.getElementById('pcm-banner-icon');
     var bTi=document.getElementById('pcm-banner-title');
     var bBo=document.getElementById('pcm-banner-body');
+    var bIc=document.getElementById('pcm-banner-icon');
     if(bEl&&bTi&&bBo){
-      if(bIc) bIc.textContent='✅';
+      if(bIc)bIc.textContent='✅';
       bTi.textContent='OS FINALIZADA — '+o.np;
       bBo.textContent='OS #'+o.num+' · Técnico: '+nomeAtual+' · '+agoraFmt;
       bEl.style.display='';
@@ -23684,18 +23671,13 @@ window.finOsConfirmar = async function(){
       bEl._t=setTimeout(function(){bEl.style.display='none';},8000);
     }
   }catch(e){}
-
-  // Push nativo para admin/chefe com permissão
+  // Push nativo admin/chefe
   try{
-    var _role=(window.PCM_RBAC&&window.PCM_RBAC.role)||(window.PCM_AUTH&&window.PCM_AUTH.role)||'';
-    if((_role==='admin'||_role==='chefe')&&'Notification' in window&&Notification.permission==='granted'){
-      new Notification('✅ OS Finalizada — '+o.np,{
-        body:'OS #'+o.num+' · Técnico: '+nomeAtual+' · '+agoraFmt,
-        icon:'https://orguel.com.br/wp-content/uploads/2021/05/cropped-orguel-favicon-192x192.png'
-      });
+    var _r=(window.PCM_RBAC&&window.PCM_RBAC.role)||(window.PCM_AUTH&&window.PCM_AUTH.role)||'';
+    if((_r==='admin'||_r==='chefe')&&'Notification' in window&&Notification.permission==='granted'){
+      new Notification('✅ OS Finalizada — '+o.np,{body:'OS #'+o.num+' · Técnico: '+nomeAtual,icon:'https://orguel.com.br/wp-content/uploads/2021/05/cropped-orguel-favicon-192x192.png'});
     }
   }catch(e){}
-
   closeM('mFinalizarOS');
   toast('✅ OS #'+o.num+' finalizada com sucesso!', 5000);
   if(typeof renderOS==='function') try{ renderOS(); }catch(e){}
