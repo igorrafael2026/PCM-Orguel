@@ -20974,16 +20974,13 @@ function esc(s){
 }
 
 // ---------- Limpeza de dados de teste ----------
+// [DESATIVADA] Essa função era problemática: rodava em todo dispositivo novo
+// que abrisse o sistema e APAGAVA o histórico + máquinas ativas.
+// Mantida só como função MANUAL (acessível via console), mas não roda sozinha.
 function limparDadosTesteAutomatico(){
-  var flag = localStorage.getItem(K_CLEAR_FLAG);
-  if(flag) return;  // já foi limpo, não faz de novo
-
-  console.log('[MIHist] Limpando dados de teste da Manutenção Interna...');
-  // Vazio local + vazio remoto (com timestamp novo, evita que remoto antigo volte)
-  save(K_MINT, []);
-  save(K_MI_HIST, []);
-  localStorage.setItem(K_CLEAR_FLAG, nowISO());
-  console.log('[MIHist] ✅ MINT zerado. Flag gravado em', K_CLEAR_FLAG);
+  console.warn('[MIHist] limparDadosTesteAutomatico é deprecated — não faz nada automaticamente');
+  console.warn('[MIHist] Use window.mintResetarTudo() se quiser zerar MANUALMENTE');
+  return;
 }
 
 // Função manual exposta (se precisar zerar de novo no futuro)
@@ -21000,19 +20997,13 @@ window.mintResetarTudo = function(){
 // Expõe a função automática também, pra debug
 window._miHistLimparTeste = limparDadosTesteAutomatico;
 
-// Roda limpeza na carga (espera autenticação)
+// [DESATIVADO] Limpeza automática removida — era a causa do sumiço do histórico.
+// Se no futuro precisar de uma limpeza controlada, será específica (por ID de registro)
+// e não em massa.
 function agendarLimpezaInicial(){
-  var tries = 0;
-  var t = setInterval(function(){
-    tries++;
-    if(tries > 30){ clearInterval(t); return; }  // desiste após ~45s
-    if(window.PCM_AUTH && window.PCM_AUTH.ok){
-      clearInterval(t);
-      setTimeout(limparDadosTesteAutomatico, 2000);  // dá tempo pro sync inicial
-    }
-  }, 1500);
+  // no-op
 }
-agendarLimpezaInicial();
+// agendarLimpezaInicial();  // DESATIVADO
 
 // ---------- Mover finalizadas para histórico ----------
 // Esta função roda periodicamente e ao re-renderizar a lista MINT.
@@ -21048,6 +21039,68 @@ function moverFinalizadasParaHistorico(){
 
 window._miHistArquivar = moverFinalizadasParaHistorico;
 
+// [FIX HISTÓRICO] Recupera inspeções aprovadas que ficaram presas em
+// status='manutencao' por causa do bug antigo onde TODA inspeção finalizada
+// era marcada como 'manutencao' (mesmo sem NOK).
+// Essa função olha todas as máquinas em manutenção, identifica as que têm
+// inspecao.resultado='aprovado' (sem NOK) e promove para finalizada.
+function recuperarInspecoesAprovadas(){
+  var atual = load(K_MINT, []);
+  if(!atual.length) return { recuperadas: 0 };
+
+  var recuperadas = 0;
+  atual.forEach(function(m){
+    if(m.status !== 'manutencao') return;
+    if(!m.inspecao) return;
+
+    // Camada 1: flag explícita de aprovado
+    var aprovada = m.inspecao.resultado === 'aprovado';
+
+    // Camada 2: stats mostra 0 NOK
+    if(!aprovada && m.inspecao.dataInspecao && m.inspecao.stats && m.inspecao.stats.nok === 0){
+      aprovada = true;
+    }
+
+    // Camada 3 (mais agressiva): se tem pmRespostas preenchido e ZERO itens NOK,
+    // e pelo menos 1 item OK, considera aprovada. Cobre casos em que
+    // a inspeção finalizou mas stats/resultado não foram gravados por algum motivo.
+    if(!aprovada && m.inspecao.pmRespostas){
+      var respostas = m.inspecao.pmRespostas;
+      var nOk = 0, nNok = 0, nResp = 0;
+      Object.keys(respostas).forEach(function(k){
+        var r = respostas[k];
+        if(r === true){ nOk++; nResp++; }
+        else if(r && typeof r === 'object' && r.s){
+          nResp++;
+          if(r.s === 'ok') nOk++;
+          else if(r.s === 'nok') nNok++;
+        }
+      });
+      // Se respondeu algo, nenhum NOK, e tem ao menos 1 OK → aprovada
+      if(nResp > 0 && nNok === 0 && nOk > 0){
+        aprovada = true;
+      }
+    }
+
+    if(aprovada){
+      m.status = 'finalizada';
+      if(!m.dataLiberacao) m.dataLiberacao = m.inspecao.dataInspecao || nowISO();
+      m._recuperadoEm = nowISO();
+      recuperadas++;
+    }
+  });
+
+  if(recuperadas > 0){
+    console.log('[MIHist] ♻️ Recuperou', recuperadas, 'inspeção(ões) aprovada(s) — indo pro histórico');
+    save(K_MINT, atual);
+    // Dispara arquivamento em sequência
+    setTimeout(moverFinalizadasParaHistorico, 500);
+  }
+  return { recuperadas: recuperadas };
+}
+
+window._miHistRecuperar = recuperarInspecoesAprovadas;
+
 // Hook: toda vez que renderManutencaoInterna rodar, faz a varredura
 // para garantir que finalizadas não ficam na lista principal.
 function instalarHookRender(){
@@ -21063,13 +21116,71 @@ function instalarHookRender(){
   };
   window.renderManutencaoInterna._miHistHooked = true;
   // Roda imediatamente também
-  try{ moverFinalizadasParaHistorico(); }catch(e){}
+  try{
+    // [FIX HISTÓRICO] 1º: recupera inspeções aprovadas presas em 'manutencao'
+    recuperarInspecoesAprovadas();
+    // 2º: arquiva as finalizadas
+    moverFinalizadasParaHistorico();
+  }catch(e){ console.warn('[MIHist] erro no bootstrap:', e); }
 }
 setTimeout(instalarHookRender, 2000);
 
+// [FIX HISTÓRICO] Recuperação automática roda VÁRIAS VEZES após auth,
+// cobrindo sync atrasado do Supabase (em conexão fraca pode demorar).
+// Intervalos: 3s, 10s, 30s, 60s, 120s
+function _miAgendarRecuperacoes(){
+  var intervalos = [3000, 10000, 30000, 60000, 120000];
+  var tries = 0;
+  var waitAuth = setInterval(function(){
+    tries++;
+    if(tries > 30){ clearInterval(waitAuth); return; }
+    if(window.PCM_AUTH && window.PCM_AUTH.ok){
+      clearInterval(waitAuth);
+      intervalos.forEach(function(ms){
+        setTimeout(function(){
+          try{
+            var r = recuperarInspecoesAprovadas();
+            if(r.recuperadas > 0){
+              console.log('[MIHist] ♻️ Recuperação automática (' + ms + 'ms):', r.recuperadas);
+            }
+          }catch(e){ console.warn('[MIHist]', e); }
+        }, ms);
+      });
+    }
+  }, 800);
+}
+_miAgendarRecuperacoes();
+
+// [FIX HISTÓRICO] Recuperação também roda sempre que dado remoto chega
+// via _applySupabaseRows. Hook silencioso.
+(function installSupabaseHook(){
+  var tries = 0;
+  var t = setInterval(function(){
+    tries++;
+    if(tries > 30){ clearInterval(t); return; }
+    var orig = window._applySupabaseRows;
+    if(typeof orig !== 'function') return;
+    if(orig._miHistHooked) { clearInterval(t); return; }
+    window._applySupabaseRows = function(rows, showToast){
+      var ret = orig.apply(this, arguments);
+      // Depois do sync remoto aplicar, tenta recuperar qualquer inspeção presa
+      try{
+        setTimeout(function(){
+          try{ recuperarInspecoesAprovadas(); }catch(e){}
+        }, 500);
+      }catch(e){}
+      return ret;
+    };
+    window._applySupabaseRows._miHistHooked = true;
+    clearInterval(t);
+  }, 1000);
+})();
+
 // ---------- UI do Histórico ----------
 window.miHistAbrir = function(){
-  // garante que as finalizadas atuais foram arquivadas
+  // [FIX HISTÓRICO] ao abrir a tela de histórico, primeiro tenta recuperar
+  // inspeções aprovadas presas. Depois arquiva finalizadas e renderiza.
+  try{ recuperarInspecoesAprovadas(); }catch(e){}
   moverFinalizadasParaHistorico();
   miHistRender();
   var ov = document.getElementById('miHistModal');
@@ -21553,14 +21664,18 @@ function debounce(fn, ms){
 
 // Normalização tolerante de strings para comparação de modelos
 function _norm(s){
-  return (s||'').toString().toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]/g, '');
+  var v = (s||'').toString().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  // [FIX VINCULAÇÃO] Remove prefixo de fabricante — "JLG 600AJ" e "600AJ" viram iguais
+  v = v.replace(/^(jlg|haulotte|genie|skyjack|snorkel|manitou)\b[\s\-_]*/i, '');
+  return v.replace(/[^a-z0-9]/g, '');
 }
 function _tokens(s){
-  return (s||'').toString().toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .split(/[^a-z0-9]+/).filter(Boolean);
+  var v = (s||'').toString().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  // Mesma regra: remove prefixo de fabricante antes de tokenizar
+  v = v.replace(/^(jlg|haulotte|genie|skyjack|snorkel|manitou)\b[\s\-_]*/i, '');
+  return v.split(/[^a-z0-9]+/).filter(Boolean);
 }
 
 // ---------- Persistência local (MINT) -----------------------------------
@@ -21586,7 +21701,10 @@ function planoLoad(){
 }
 function planoFindForModel(modelo){
   var planos = planoLoad();
-  if(!planos.length) return null;
+  if(!planos.length){
+    console.warn('[iv2] planoFindForModel: nenhum plano cadastrado em', K_PM);
+    return null;
+  }
   var mNorm = _norm(modelo);
   var mToks = _tokens(modelo);
   var plano = null;
@@ -21618,8 +21736,26 @@ function planoFindForModel(modelo){
       });
     });
   }
+
+  if(!plano){
+    // [DIAG] Ajuda debug quando falha no mobile: mostra qual modelo foi buscado
+    // e quais modelos estão cadastrados. Útil pra ver se o sync dos planos veio.
+    console.warn('[iv2] planoFindForModel FALHOU. Modelo buscado:', modelo, '| normalizado:', mNorm);
+    console.warn('[iv2] Planos disponíveis:', planos.length);
+    planos.forEach(function(p){
+      console.warn('  -', p.nome, '→', (p.modelos||[]).join(', '));
+    });
+  }
   return plano;
 }
+
+// Expor pra debug manual no console (útil no mobile via Remote Debug)
+window.pmTestarVinculacao = function(modelo){
+  var r = planoFindForModel(modelo);
+  if(r) console.log('✅ "' + modelo + '" casa com plano:', r.nome);
+  else   console.log('❌ "' + modelo + '" NÃO achou plano');
+  return r;
+};
 
 // ---------- Lógica de manutenção por horímetro --------------------------
 // A regra (combinada com o usuário Rodrigo, abril/2026):
@@ -21719,18 +21855,7 @@ function queueSave(q){
 }
 function queueEnqueue(type, payload){
   var q = queueLoad();
-  // [FIX] Para tipo 'mint': substitui item existente em vez de empilhar.
-  var replaced = false;
-  for(var i=0; i<q.length; i++){
-    if(q[i].type === type){
-      q[i] = { id: q[i].id, type: type, payload: payload, ts: nowISO(), attempts: 0 };
-      replaced = true;
-      break;
-    }
-  }
-  if(!replaced){
-    q.push({ id: 'q_'+Date.now()+'_'+Math.random().toString(36).slice(2,8), type: type, payload: payload, ts: nowISO(), attempts: 0 });
-  }
+  q.push({ id: 'q_'+Date.now()+'_'+Math.random().toString(36).slice(2,8), type: type, payload: payload, ts: nowISO(), attempts: 0 });
   queueSave(q);
   setSyncStatus('pending');
 }
@@ -21783,7 +21908,6 @@ function syncMintData(data){
     })
   }).then(function(r){
     if(!r.ok) throw new Error('HTTP ' + r.status);
-    queueSave([]);  // [FIX] limpa fila — sync direto deu certo, itens pendentes são obsoletos
     setSyncStatus('ok');
     state.lastSaveAt = nowISO();
     return true;
@@ -22332,6 +22456,55 @@ window.iv2ToggleObs = function(key){
 window.iv2SetTecnico = function(v){ state.tecnico = v; markDirty(); };
 window.iv2SetPrioridade = function(v){ state.prioridade = v; markDirty(); };
 
+// [FIX VINCULAÇÃO MOBILE] Busca planos do Supabase e grava localmente.
+// Chamada quando inspeção abre e não tem plano pro modelo — cobre o caso
+// de dispositivo novo onde o sync inicial ainda não completou.
+function _iv2RefetchPlanos(cb){
+  var auth = window.PCM_AUTH;
+  if(!auth || !auth.ok || !auth.token){
+    if(cb) cb(false);
+    return;
+  }
+  if(!navigator.onLine){
+    if(cb) cb(false);
+    return;
+  }
+  var cid = (window.PCM_RBAC && window.PCM_RBAC.company_id) || auth.company_id;
+  if(!cid){ if(cb) cb(false); return; }
+
+  // Busca direto a chave de planos no Supabase
+  var url = window.SB_URL + '/rest/v1/pcm_data'
+    + '?company_id=eq.' + encodeURIComponent(cid)
+    + '&data_key=eq.pcmv3_pm_planos'
+    + '&select=data_value';
+
+  fetch(url, {
+    headers: {
+      'apikey': window.SB_KEY,
+      'Authorization': 'Bearer ' + auth.token
+    }
+  }).then(function(r){
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  }).then(function(rows){
+    if(rows && rows.length && rows[0].data_value){
+      try{
+        var planos = JSON.parse(rows[0].data_value);
+        if(Array.isArray(planos) && planos.length){
+          localStorage.setItem('pcmv3_pm_planos', JSON.stringify(planos));
+          console.log('[iv2] ✅ Planos atualizados do Supabase:', planos.length);
+          if(cb) cb(true);
+          return;
+        }
+      }catch(e){}
+    }
+    if(cb) cb(false);
+  }).catch(function(err){
+    console.warn('[iv2] refetch planos falhou:', err && err.message);
+    if(cb) cb(false);
+  });
+}
+
 // ---------- Abrir / Fechar / Finalizar ----------------------------------
 window.mintAbrirInspecao = function(id){
   var m = mintFindById(id);
@@ -22344,6 +22517,20 @@ window.mintAbrirInspecao = function(id){
   state.id = id;
   state.m = m;
   state.plano = planoFindForModel(m.modelo || '');
+
+  // [FIX VINCULAÇÃO MOBILE] Se não achou plano local, tenta buscar no Supabase
+  // e reabrir a tela. No mobile, o sync inicial pode demorar — não podemos
+  // deixar o técnico ver "sem plano" só porque o sync ainda não chegou.
+  if(!state.plano && m.modelo){
+    console.log('[iv2] Plano não achado localmente, tentando buscar do Supabase...');
+    _iv2RefetchPlanos(function(achou){
+      if(achou){
+        console.log('[iv2] Planos atualizados — reabrindo inspeção');
+        // Reexecuta a abertura (agora com os planos sincronizados)
+        window.mintAbrirInspecao(id);
+      }
+    });
+  }
 
   var ins = m.inspecao || {};
   state.respostas = {};
@@ -22457,9 +22644,11 @@ function finalizarFluxo(stats){
   var all = mintLoad();
   var idx = -1;
   for(var i=0; i<all.length; i++){ if(String(all[i].id) === String(state.id)){ idx = i; break; } }
-  if(idx < 0) return;
+  if(idx < 0){ console.warn('[iv2] máquina não achada para finalizar:', state.id); return; }
 
   var m = all[idx];
+  var temNok = stats.nokCount > 0;
+
   m.inspecao = Object.assign({}, m.inspecao || {}, {
     diag: state.diag,
     estrutura: state.estrutura,
@@ -22470,7 +22659,7 @@ function finalizarFluxo(stats){
     tecnico: state.tecnico,
     prioridade: state.prioridade,
     dataInspecao: nowISO(),
-    resultado: stats.nokCount > 0 ? 'manutencao' : 'aprovado',
+    resultado: temNok ? 'manutencao' : 'aprovado',
     stats: {
       ok: stats.okCount, nok: stats.nokCount, na: stats.naCount,
       total: stats.tot, criticos: stats.criticos.length
@@ -22479,17 +22668,55 @@ function finalizarFluxo(stats){
   m.prioridade = state.prioridade;
   if(state.tecnico) m.tecnicoResponsavel = state.tecnico;
 
-  // Próximo status: se tem item NOK, vai pra manutenção; senão, fica aguardando liberação
-  m.status = stats.nokCount > 0 ? 'manutencao' : 'manutencao'; // por ora ambos vão a 'manutencao' (UX compat)
-  // TODO: na próxima entrega, criar status 'aguardando_liberacao' separado
+  // [FIX HISTÓRICO] Separação de fluxo:
+  //   - SEM NOK (tudo aprovado): finalizada → histórico direto
+  //   - COM NOK: manutenção (fica na lista principal esperando reparo)
+  if(temNok){
+    m.status = 'manutencao';
+  } else {
+    m.status = 'finalizada';
+    m.dataLiberacao = nowISO();  // usado pelo histórico
+  }
   m.updated_at = nowISO();
   all[idx] = m;
 
   mintPersist(all);
-  syncMintData(all).catch(function(){});
 
-  iv2Close();
-  if(typeof toast === 'function') toast('✅ Inspeção finalizada — máquina em manutenção');
+  // [FIX HISTÓRICO] Sync robusto ao finalizar — faz até 3 tentativas
+  // com backoff (0, 2s, 5s). Sempre enfileira de qualquer jeito,
+  // então mesmo se falhar tudo, o queueFlush tenta depois.
+  (function tentarSync(tentativa){
+    tentativa = tentativa || 0;
+    syncMintData(all).then(function(){
+      console.log('[iv2] ✅ Finalização sincronizada no servidor');
+    }).catch(function(err){
+      console.warn('[iv2] tentativa ' + (tentativa+1) + ' falhou:', err && err.message);
+      if(tentativa < 2){
+        setTimeout(function(){ tentarSync(tentativa+1); }, tentativa === 0 ? 2000 : 5000);
+      } else {
+        console.log('[iv2] 3 tentativas falharam — dado está local + fila, queueFlush vai re-tentar');
+      }
+    });
+  })();
+
+  // [FIX HISTÓRICO] Se finalizou sem NOK, arquivar imediatamente no histórico
+  // em vez de esperar o renderManutencaoInterna fazer isso depois.
+  if(!temNok && typeof window._miHistArquivar === 'function'){
+    try{
+      var r = window._miHistArquivar();
+      console.log('[iv2] finalizou sem NOK — arquivou', r && r.moved, 'registro(s) no histórico');
+    }catch(e){ console.warn('[iv2] arquivar falhou:', e); }
+  }
+
+  // [FIX] window.iv2Close pra garantir escopo global (IIFE)
+  if(typeof window.iv2Close === 'function') window.iv2Close();
+
+  if(typeof toast === 'function'){
+    toast(temNok
+      ? '✅ Inspeção finalizada — em manutenção (' + stats.nokCount + ' item(ns) NOK)'
+      : '✅ Inspeção aprovada — registro no histórico'
+    );
+  }
   if(typeof renderManutencaoInterna === 'function') renderManutencaoInterna();
 }
 
@@ -22630,40 +22857,13 @@ function _mintFmtD(iso){ if(!iso) return '—'; try{ return new Date(iso).toLoca
 function _mintSyncSupabase(data){
   var auth=window.PCM_AUTH;
   if(!auth||!auth.ok||!auth.token||!window.SB_URL||!window.SB_KEY) return;
-  var cid=(window.PCM_RBAC&&window.PCM_RBAC.company_id)||auth.company_id;
+  var cid=window.PCM_RBAC&&window.PCM_RBAC.company_id;
   if(!cid) return;
-  var body=JSON.stringify({user_id:auth.uid,company_id:cid,data_key:K_MINT,data_value:JSON.stringify(data),updated_at:new Date().toISOString()});
-  var url=window.SB_URL+'/rest/v1/pcm_data?on_conflict=company_id,data_key';
-  function doFetch(tok){
-    return fetch(url,{
-      method:'POST',
-      headers:{'apikey':window.SB_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
-      body:body
-    });
-  }
-  // [FIX] Tratamento de erro: retry em rede instável, refresh em 401
-  doFetch(auth.token).then(function(r){
-    if(r.status===401||r.status===403){
-      // Token expirado — renovar e tentar de novo
-      if(typeof window._pcmRefreshToken==='function'){
-        window._pcmRefreshToken().then(function(newTok){
-          if(newTok) doFetch(newTok).catch(function(){});
-        });
-      }
-    } else if(!r.ok){
-      // Falha HTTP não-auth: retry único após 4s
-      setTimeout(function(){
-        var a2=window.PCM_AUTH;
-        if(a2&&a2.ok) doFetch(a2.token).catch(function(){});
-      }, 4000);
-    }
-  }).catch(function(){
-    // Erro de rede: retry após 4s
-    setTimeout(function(){
-      var a2=window.PCM_AUTH;
-      if(a2&&a2.ok) doFetch(a2.token).catch(function(){});
-    }, 4000);
-  });
+  fetch(window.SB_URL+'/rest/v1/pcm_data?on_conflict=company_id,data_key',{
+    method:'POST',
+    headers:{'apikey':window.SB_KEY,'Authorization':'Bearer '+auth.token,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
+    body:JSON.stringify({user_id:auth.uid,company_id:cid,data_key:K_MINT,data_value:JSON.stringify(data),updated_at:new Date().toISOString()})
+  }).catch(function(){});
 }
 
 function _mintFetchRemote(){
