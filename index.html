@@ -1972,84 +1972,29 @@ body{
 </head>
 <body>
 
-<!-- ══ P3 — PAINEL DE DIAGNÓSTICO PCM ══════════════════════════════════ -->
-<button id="_pcmDiagBtn" onclick="window._pcmDiagOpen()" title="Status de sincronização"
-  style="position:fixed;top:10px;right:10px;z-index:99999;width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;background:#2e7d32;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.4);transition:background .3s">📡</button>
-
-<div id="_pcmDiagOverlay" style="display:none;position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.7);align-items:center;justify-content:center">
-  <div style="background:#1a1a2e;border:1px solid #333;border-radius:16px;padding:20px;width:min(94vw,440px);max-height:88vh;overflow-y:auto;color:#eee;font-family:'DM Mono',monospace;font-size:12px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <span style="font-family:'DM Sans',sans-serif;font-size:16px;font-weight:700">📡 Diagnóstico PCM</span>
-      <button onclick="window._pcmDiagClose()" style="background:none;border:none;color:#aaa;font-size:20px;cursor:pointer;line-height:1">✕</button>
-    </div>
-    <div id="_pcmDiagBody" style="display:flex;flex-direction:column;gap:8px"></div>
-  </div>
-</div>
-
-<script>
-window._pcmDiagOpen = function(){
-  window._pcmDiagRefresh();
-  document.getElementById('_pcmDiagOverlay').style.display='flex';
-};
-window._pcmDiagClose = function(){
-  document.getElementById('_pcmDiagOverlay').style.display='none';
-};
-window._pcmDiagRefresh = function(){
-  var d = window._pcmDiag || {};
-  var auth = window.PCM_AUTH;
-  var q = window._pcmSyncQueue ? window._pcmSyncQueue.count() : 0;
-  var online = navigator.onLine;
-  var authOk = auth && auth.ok;
-  var expAt = d.authExpAt ? new Date(d.authExpAt).toLocaleTimeString('pt-BR') : '?';
-
-  function row(label, val, ok){
-    var color = ok === true ? '#69f0ae' : ok === false ? '#ff5252' : '#fff';
-    return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #222"><span style="color:#aaa">'+label+'</span><span style="color:'+color+'">'+val+'</span></div>';
-  }
-  var html = '';
-  html += row('Conexão', online ? '🟢 Online' : '🔴 Offline', online);
-  html += row('Auth', authOk ? '🟢 OK' : '🔴 Inválido/Carregando', authOk);
-  if(authOk) html += row('Token expira', expAt);
-  html += row('Realtime WS', d.realtimeStatus||'desconhecido');
-  html += row('Fila pendente', q + (q>0?' item(s) 🟡':' ✅'), q===0);
-  html += row('Último flush', d.lastFlush||'—');
-
-  if(d.history && d.history.length){
-    html += '<div style="margin-top:8px;color:#aaa;font-size:11px;margin-bottom:4px">Últimos envios:</div>';
-    d.history.forEach(function(h){
-      html += row(h.ts + ' ' + (h.key||'').replace('pcmv3_',''), h.ok ? '✅ OK' : '❌ '+h.err, h.ok);
-    });
-  }
-
-  var qItems = window._pcmSyncQueue ? window._pcmSyncQueue.load() : [];
-  if(qItems.length){
-    html += '<div style="margin-top:8px;color:#f9a825;font-size:11px;margin-bottom:4px">Fila ('+qItems.length+' itens):</div>';
-    qItems.forEach(function(item){
-      html += row(item.key, item.ts ? item.ts.slice(11,19) : '—');
-    });
-  }
-
-  document.getElementById('_pcmDiagBody').innerHTML = html;
-};
-// Atualiza expiração do token quando PCM_AUTH mudar
-setInterval(function(){
-  if(window.PCM_AUTH && window.PCM_AUTH.exp){
-    window._pcmDiag = window._pcmDiag || {};
-    window._pcmDiag.authExpAt = window.PCM_AUTH.exp * 1000;
-  }
-}, 3000);
-</script>
-<!-- ══ /P3 ══════════════════════════════════════════════════════════════ -->
+<!-- ══ /P3 (diagnóstico removido) ═══════════════════════════════════════ -->
 
 <!-- ══ RESERVA DE MÁQUINA ═══════════════════════════════════════════════ -->
 <div id="_mReserva" class="overlay" style="z-index:9500;align-items:center;justify-content:center">
-  <div style="background:var(--bg2,#1a1a2e);border:1px solid var(--border2,#333);border-radius:18px;padding:24px;width:min(94vw,400px);font-family:'DM Sans',sans-serif">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--accent,#4fc3f7);margin-bottom:4px" id="_mReservaNP">—</div>
-    <div style="font-size:12px;color:var(--text2,#aaa);margin-bottom:18px" id="_mReservaModelo">—</div>
-    <div id="_mReservaInfo" style="margin-bottom:18px"></div>
+  <div style="background:var(--bg2,#1a1a2e);border:1px solid var(--border2,#333);border-radius:18px;padding:24px;width:min(94vw,420px);font-family:'DM Sans',sans-serif">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--accent,#4fc3f7);margin-bottom:2px" id="_mReservaNP">—</div>
+    <div style="font-size:12px;color:var(--text2,#aaa);margin-bottom:16px" id="_mReservaModelo">—</div>
+
+    <!-- Info da reserva atual ou aviso de livre -->
+    <div id="_mReservaInfo" style="margin-bottom:16px"></div>
+
+    <!-- Campo cliente — visível só quando pode reservar -->
+    <div id="_mReservaClienteWrap" style="margin-bottom:16px">
+      <label style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3,#777);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px">Cliente / Demanda <span style="color:#ef4444">*</span></label>
+      <input id="_mReservaCliente" type="text" placeholder="Nome do cliente para esta reserva"
+        style="width:100%;box-sizing:border-box;background:var(--bg3,#111);border:1px solid var(--border2,#333);border-radius:10px;padding:11px 14px;color:var(--text1,#eee);font-size:13px;font-family:'DM Sans',sans-serif;outline:none"
+        oninput="document.getElementById('_mReservaClienteErr').style.display='none'">
+      <div id="_mReservaClienteErr" style="display:none;color:#ef4444;font-size:11px;margin-top:4px">⚠️ Informe o nome do cliente para reservar.</div>
+    </div>
+
     <div style="display:flex;flex-direction:column;gap:10px">
-      <button id="_mReservaBtnConfirm" onclick="window._reservaConfirmar()" style="padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--accent,#4fc3f7),var(--purple,#7c3aed));color:#fff;font-size:14px;font-weight:700;cursor:pointer">Reservar para mim</button>
-      <button id="_mReservaBtnLiberar" onclick="window._reservaLiberar()" style="display:none;padding:13px;border:none;border-radius:12px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#ef4444;font-size:14px;font-weight:600;cursor:pointer">🔓 Liberar reserva</button>
+      <button id="_mReservaBtnConfirm" onclick="window._reservaConfirmar()" style="padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--accent,#4fc3f7),var(--purple,#7c3aed));color:#fff;font-size:14px;font-weight:700;cursor:pointer">🔒 Confirmar Reserva</button>
+      <button id="_mReservaBtnLiberar" onclick="window._reservaLiberar()" style="display:none;padding:13px;border:1px solid rgba(239,68,68,.3);border-radius:12px;background:rgba(239,68,68,.1);color:#ef4444;font-size:14px;font-weight:600;cursor:pointer">🔓 Liberar reserva</button>
       <button onclick="closeM('_mReserva')" style="padding:11px;border:1px solid var(--border2,#333);border-radius:12px;background:none;color:var(--text2,#aaa);font-size:13px;cursor:pointer">Fechar</button>
     </div>
   </div>
@@ -2058,13 +2003,12 @@ setInterval(function(){
 <script>
 // ── RESERVA DE MÁQUINA ──────────────────────────────────────────────────
 // Regras:
-//   - admin  → pode reservar qualquer máquina, pode liberar qualquer reserva
-//   - comercial → pode reservar máquinas livres; não pode reservar máquina
-//                 já reservada por OUTRO comercial (apenas liberar a própria)
-//   - outros → sem acesso ao botão (oculto no render)
+//   - comercial → pode reservar máquinas livres informando nome do cliente (obrigatório)
+//                 não pode reservar máquina já reservada por OUTRO comercial
+//   - admin → pode reservar (registro de ciência de demanda) ou liberar qualquer reserva
+//   - outros → sem acesso
 //
-// Persistência: campo `reserva` dentro de cada objeto de equips (pcmv3_eq)
-// Formato: { uid, nome, role, at }  |  null = livre
+// Campo reserva: { uid, nome, role, cliente, at }  |  null = livre
 
 window._reservaState = { id: null };
 
@@ -2081,43 +2025,68 @@ window.abrirReserva = function(id, evt){
   if(!eq){ toast && toast('⚠️ Máquina não encontrada'); return; }
 
   window._reservaState.id = id;
-  document.getElementById('_mReservaNP').textContent = eq.np || '—';
+  document.getElementById('_mReservaNP').textContent    = eq.np || '—';
   document.getElementById('_mReservaModelo').textContent = (eq.modelo||'—') + ' · ' + (eq.fabricante||'—');
 
-  var role  = window.PCM_RBAC.role;
-  var uid   = window.PCM_AUTH && window.PCM_AUTH.uid;
-  var nome  = window.PCM_AUTH && (window.PCM_AUTH.nome || window.PCM_AUTH.email || 'Você');
-  var r     = eq.reserva;
-  var info  = document.getElementById('_mReservaInfo');
-  var btnC  = document.getElementById('_mReservaBtnConfirm');
-  var btnL  = document.getElementById('_mReservaBtnLiberar');
+  var role    = window.PCM_RBAC.role;
+  var uid     = window.PCM_AUTH && window.PCM_AUTH.uid;
+  var r       = eq.reserva;
+  var info    = document.getElementById('_mReservaInfo');
+  var btnC    = document.getElementById('_mReservaBtnConfirm');
+  var btnL    = document.getElementById('_mReservaBtnLiberar');
+  var cliWrap = document.getElementById('_mReservaClienteWrap');
+  var cliInp  = document.getElementById('_mReservaCliente');
+  var cliErr  = document.getElementById('_mReservaClienteErr');
 
-  btnC.style.display = '';
-  btnL.style.display = 'none';
-  btnC.disabled = false;
-  btnC.textContent = 'Reservar para mim';
+  // Reset
+  btnC.style.display  = '';
+  btnL.style.display  = 'none';
+  btnC.disabled       = false;
+  btnC.style.opacity  = '';
+  btnC.style.cursor   = 'pointer';
+  cliWrap.style.display = '';
+  cliInp.value        = '';
+  cliErr.style.display = 'none';
 
   if(!r){
-    // Livre
-    info.innerHTML = '<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:10px;padding:12px;font-size:13px;color:#69f0ae">🟢 Máquina disponível — sem reserva ativa.</div>';
+    // Livre — pode reservar
+    info.innerHTML = '<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:10px;padding:11px 14px;font-size:13px;color:#69f0ae">🟢 Máquina disponível — sem reserva ativa.</div>';
+    btnC.textContent = '🔒 Confirmar Reserva';
+    if(role === 'admin'){
+      cliWrap.querySelector('label').innerHTML = 'Cliente / Demanda do Comercial <span style="color:#ef4444">*</span>';
+    }
   } else if(r.uid === uid){
-    // Própria reserva
-    info.innerHTML = '<div style="background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.25);border-radius:10px;padding:12px;font-size:13px;color:var(--accent,#4fc3f7)">🔒 Reservada por <strong>você</strong> em ' + _fmtTs(r.at) + '.</div>';
-    btnC.style.display = 'none';
-    btnL.style.display = '';
+    // Própria reserva — pode liberar, não pode re-reservar
+    info.innerHTML = '<div style="background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.25);border-radius:10px;padding:11px 14px;font-size:13px;color:var(--accent,#4fc3f7)">'
+      + '🔒 Reservada por <strong>você</strong> para <strong>' + (r.cliente||'—') + '</strong><br>'
+      + '<span style="font-size:11px;color:#aaa">em ' + _fmtTs(r.at) + '</span></div>';
+    btnC.style.display  = 'none';
+    btnL.style.display  = '';
+    btnL.textContent    = '🔓 Liberar minha reserva';
+    cliWrap.style.display = 'none';
   } else {
     // Reservada por outro
     var outroPode = role === 'admin';
-    info.innerHTML = '<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:12px;font-size:13px;color:#ef4444">🔒 Reservada por <strong>' + (r.nome||r.uid) + '</strong> em ' + _fmtTs(r.at) + '.' + (outroPode ? '<br><span style="color:#aaa;font-size:11px">Como admin você pode sobrescrever.</span>' : '') + '</div>';
+    info.innerHTML = '<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:11px 14px;font-size:13px;color:#ef4444">'
+      + '🔒 Reservada por <strong>' + (r.nome||r.uid) + '</strong>'
+      + (r.cliente ? ' para <strong>' + r.cliente + '</strong>' : '')
+      + '<br><span style="font-size:11px;color:#aaa">em ' + _fmtTs(r.at) + '</span>'
+      + (outroPode ? '<br><span style="font-size:11px;color:#f9a825">⚠️ Como admin você pode assumir ou liberar.</span>' : '')
+      + '</div>';
+
     if(!outroPode){
-      btnC.disabled = true;
-      btnC.textContent = 'Indisponível para reserva';
+      // Comercial — bloqueado
+      btnC.disabled      = true;
       btnC.style.opacity = '0.4';
-      btnC.style.cursor = 'default';
+      btnC.style.cursor  = 'default';
+      btnC.textContent   = '🔒 Indisponível para reserva';
+      cliWrap.style.display = 'none';
     } else {
+      // Admin — pode assumir ou liberar
       btnC.textContent = '🔓 Assumir reserva (admin)';
       btnL.style.display = '';
-      document.getElementById('_mReservaBtnLiberar').textContent = '🗑️ Liberar para todos';
+      btnL.textContent   = '🗑️ Liberar para todos';
+      cliWrap.querySelector('label').innerHTML = 'Cliente / Demanda do Comercial <span style="color:#ef4444">*</span>';
     }
   }
 
@@ -2125,30 +2094,38 @@ window.abrirReserva = function(id, evt){
 };
 
 window._reservaConfirmar = function(){
-  var id   = window._reservaState.id;
-  var uid  = window.PCM_AUTH && window.PCM_AUTH.uid;
-  var nome = window.PCM_AUTH && (window.PCM_AUTH.nome || window.PCM_AUTH.email || 'Usuário');
-  var role = window.PCM_RBAC && window.PCM_RBAC.role;
+  var id      = window._reservaState.id;
+  var uid     = window.PCM_AUTH && window.PCM_AUTH.uid;
+  var nome    = window.PCM_AUTH && (window.PCM_AUTH.nome || window.PCM_AUTH.email || 'Usuário');
+  var role    = window.PCM_RBAC && window.PCM_RBAC.role;
+  var cliente = (document.getElementById('_mReservaCliente').value || '').trim();
+  var cliErr  = document.getElementById('_mReservaClienteErr');
+
+  if(!cliente){
+    cliErr.style.display = '';
+    document.getElementById('_mReservaCliente').focus();
+    return;
+  }
+
   if(!id || !uid){ closeM('_mReserva'); return; }
 
   var arr = window.equips || equips || [];
   var idx = arr.findIndex(function(e){ return +e.id === +id; });
   if(idx < 0){ closeM('_mReserva'); return; }
 
-  // Bloquear se outro comercial já reservou e eu não sou admin
   var r = arr[idx].reserva;
   if(r && r.uid !== uid && role !== 'admin'){
     toast && toast('⛔ Máquina já reservada por ' + (r.nome||r.uid));
     closeM('_mReserva'); return;
   }
 
-  arr[idx].reserva = { uid: uid, nome: nome, role: role, at: new Date().toISOString() };
+  arr[idx].reserva    = { uid: uid, nome: nome, role: role, cliente: cliente, at: new Date().toISOString() };
   arr[idx].updated_at = new Date().toISOString();
   window.equips = arr;
   equips = arr;
   sv(K.eq, arr);
   closeM('_mReserva');
-  toast && toast('🔒 Máquina ' + (arr[idx].np||'') + ' reservada!');
+  toast && toast('🔒 ' + (arr[idx].np||'') + ' reservada para ' + cliente);
   if(typeof renderFrota === 'function') renderFrota();
 };
 
@@ -2168,13 +2145,14 @@ window._reservaLiberar = function(){
     closeM('_mReserva'); return;
   }
 
-  arr[idx].reserva = null;
+  var np = arr[idx].np || '';
+  arr[idx].reserva    = null;
   arr[idx].updated_at = new Date().toISOString();
   window.equips = arr;
   equips = arr;
   sv(K.eq, arr);
   closeM('_mReserva');
-  toast && toast('🔓 Reserva liberada — ' + (arr[idx].np||''));
+  toast && toast('🔓 Reserva liberada — ' + np);
   if(typeof renderFrota === 'function') renderFrota();
 };
 
@@ -2186,7 +2164,6 @@ function _fmtTs(iso){
   }catch(e){ return iso; }
 }
 
-// Badge de reserva para usar nas tabelas
 window._reservaBadge = function(eq){
   var r = eq && eq.reserva;
   if(!r) return '';
@@ -2194,8 +2171,8 @@ window._reservaBadge = function(eq){
   var minha = r.uid === uid;
   return '<span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;font-family:\'DM Mono\',monospace;font-weight:700;padding:2px 7px;border-radius:20px;'
     + (minha
-      ? 'background:rgba(14,165,233,.15);border:1px solid rgba(14,165,233,.3);color:#4fc3f7">🔒 MINHA'
-      : 'background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#ef4444">🔒 ' + (r.nome||'reservada').split(' ')[0].toUpperCase())
+      ? 'background:rgba(14,165,233,.15);border:1px solid rgba(14,165,233,.3);color:#4fc3f7">🔒 ' + (r.cliente||'MINHA')
+      : 'background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#ef4444">🔒 ' + (r.cliente||r.nome||'reservada'))
     + '</span>';
 };
 </script>
@@ -7444,7 +7421,8 @@ function renderFrotaQuickFilters(){
   const locado = equips.filter(e=>e.status==='locado').length;
   const manut = equips.filter(e=>e.status==='manutencao').length;
   const inop = equips.filter(e=>e.status==='inoperante').length;
-  const cur = document.getElementById('frotaStatus')?.value || '';
+  const reservado = equips.filter(e=>e.reserva).length;
+  const cur = window._frotaReservadoFilter ? '_reservado' : (document.getElementById('frotaStatus')?.value || '');
 
   const icons = {
     '': `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="5" width="12" height="7" rx="1.5" stroke="currentColor" stroke-width="1.2"/><rect x="3" y="7" width="3" height="3" rx=".5" fill="currentColor" opacity=".6"/><rect x="8" y="7" width="3" height="3" rx=".5" fill="currentColor" opacity=".6"/><path d="M4 5V3.5A3 3 0 0 1 10 3.5V5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>`,
@@ -7452,6 +7430,7 @@ function renderFrotaQuickFilters(){
     'locado': `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5C5 1.5 3.5 3 3.5 5c0 3.5 3.5 7.5 3.5 7.5s3.5-4 3.5-7.5C10.5 3 9 1.5 7 1.5z" stroke="currentColor" stroke-width="1.2"/><circle cx="7" cy="5" r="1.3" fill="currentColor"/></svg>`,
     'manutencao': `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M8.5 2a3 3 0 0 1 0 4.2L3.6 11.1a1.1 1.1 0 0 1-1.6-1.6L7 4.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M9.5 1.5l2 2-1 1-2-2z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>`,
     'inoperante': `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M4.5 4.5l5 5M9.5 4.5l-5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`,
+    '_reservado': `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="3.5" y="6" width="7" height="5.5" rx="1.2" stroke="currentColor" stroke-width="1.2"/><path d="M5 6V4.5a2 2 0 0 1 4 0V6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>`,
   };
 
   const btn = (val, label, count, color) => {
@@ -7471,12 +7450,20 @@ function renderFrotaQuickFilters(){
     btn('patio', 'Disponível', disp, 'var(--green)') +
     btn('locado', 'Locado', locado, 'var(--accent2)') +
     btn('manutencao', 'Manutenção', manut, 'var(--amber)') +
-    (inop > 0 ? btn('inoperante', 'Inoperante', inop, 'var(--red)') : '');
+    (inop > 0 ? btn('inoperante', 'Inoperante', inop, 'var(--red)') : '') +
+    (reservado > 0 ? btn('_reservado', 'Reservado', reservado, 'var(--red)') : '');
 }
 
 function setFrotaFilter(val){
-  const sel = document.getElementById('frotaStatus');
-  if(sel) sel.value = val;
+  if(val === '_reservado'){
+    window._frotaReservadoFilter = true;
+    const sel = document.getElementById('frotaStatus');
+    if(sel) sel.value = '';
+  } else {
+    window._frotaReservadoFilter = false;
+    const sel = document.getElementById('frotaStatus');
+    if(sel) sel.value = val;
+  }
   renderFrotaQuickFilters();
   renderFrota();
 }
@@ -7488,14 +7475,14 @@ function renderFrota(){
   if(window.equips && window.equips.length) equips = window.equips; // FIX v10
   renderFrotaQuickFilters();
   const q=(document.getElementById('frotaQ')?.value||'').toLowerCase();
-  const fs=document.getElementById('frotaStatus')?.value||'';
+  const fs=window._frotaReservadoFilter ? '_reservado' : (document.getElementById('frotaStatus')?.value||'');
   const ft=document.getElementById('frotaTipo')?.value||'';
   const fcp=(document.getElementById('frotaCodProd')?.value||'').trim();
 
   // Filtro cód. produto: match parcial via dropdown (não pela lupa)
   let lista=equips.filter(e=>
     (!q||(e.np||'').toLowerCase().includes(q)||(e.modelo||'').toLowerCase().includes(q)||(e.fabricante||'').toLowerCase().includes(q)||(e.serie||'').toLowerCase().includes(q))&&
-    (!fs||e.status===fs)&&
+    (fs==='_reservado' ? !!e.reserva : (!fs||e.status===fs))&&
     (!ft||e.tipo===ft)&&
     (!fcp||(e.codProduto||'').toLowerCase().includes(fcp.toLowerCase()))
   ).sort((a,b)=>(a.np||'').localeCompare(b.np||''));
@@ -7505,8 +7492,7 @@ function renderFrota(){
 
   const isCom = window.PCM_RBAC && window.PCM_RBAC.role==='comercial';
   const isAdm = window.PCM_RBAC && window.PCM_RBAC.role==='admin';
-  const canReserva = isCom || isAdm;
-  const cols = isCom ? 10 : (isAdm ? 10 : 8);
+  const cols = isCom ? 9 : 8;
 
   const tbl=document.getElementById('frotaTbl');
   if(!tbl)return;
@@ -7515,7 +7501,7 @@ function renderFrota(){
     return;
   }
   tbl.innerHTML=`<thead><tr>
-    <th>Cód. Produto</th><th>NP</th><th>Modelo</th><th>Fabricante</th><th>Tipo</th><th>Horímetro</th><th>Status</th><th>Cliente / Localização</th>${canReserva?'<th>Reserva</th>':''}${isCom?'<th></th>':''}
+    <th>Cód. Produto</th><th>NP</th><th>Modelo</th><th>Fabricante</th><th>Tipo</th><th>Horímetro</th><th>Status</th><th>Cliente / Localização</th>${isCom?'<th></th>':''}
   </tr></thead><tbody>${lista.map(eq=>{
     const loc=locacoes.find(l=>l.np===eq.np&&l.status==='ativa');
     const dias=getDiasMnt(eq.np);
@@ -7523,20 +7509,12 @@ function renderFrota(){
     const clienteTxt=loc?`<span style="font-size:11px;color:var(--text2)">📍 ${loc.cliente}${loc.cidade?' · '+loc.cidade+'/'+loc.estado:''}</span>`:`<span style="color:var(--text3);font-size:11px">—</span>`;
     const seguroBtn=isCom?`<td><button onclick="exportarFormularioSeguro(${eq.id});event.stopPropagation()" style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:4px 10px;color:var(--green);font-size:10px;font-weight:700;cursor:pointer;font-family:'DM Mono',monospace;white-space:nowrap">📋 Seguro</button></td>`:'';
 
-    // Coluna reserva
-    var rCell = '';
-    if(canReserva){
-      var r = eq.reserva;
-      var uid = window.PCM_AUTH && window.PCM_AUTH.uid;
-      if(!r){
-        rCell = `<td><button onclick="abrirReserva(${eq.id},event)" style="background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.25);border-radius:8px;padding:4px 10px;color:var(--accent,#4fc3f7);font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'DM Mono',monospace">🔓 Reservar</button></td>`;
-      } else if(r.uid === uid){
-        rCell = `<td><button onclick="abrirReserva(${eq.id},event)" style="background:rgba(14,165,233,.15);border:1px solid rgba(14,165,233,.4);border-radius:8px;padding:4px 10px;color:#4fc3f7;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'DM Mono',monospace">🔒 Minha</button></td>`;
-      } else {
-        // Reservada por outro
-        var bloq = (window.PCM_RBAC.role !== 'admin');
-        rCell = `<td><button onclick="abrirReserva(${eq.id},event)" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:4px 10px;color:#ef4444;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'DM Mono',monospace;opacity:${bloq?'0.7':'1'}">${bloq?'🔒 Indispon.':'🔒 '+((r.nome||'').split(' ')[0]||'Outro')}</button></td>`;
-      }
+    // Badge reserva na coluna de status (sempre vermelho)
+    var rBadge = '';
+    var _r = eq.reserva;
+    if(_r){
+      var _rLabel = '🔒 RESERVADO' + (_r.cliente ? ' — ' + _r.cliente : (_r.nome ? ' — ' + _r.nome : ''));
+      rBadge = ' <span style="display:inline-block;font-size:9px;font-family:\'DM Mono\',monospace;font-weight:700;padding:2px 7px;border-radius:10px;vertical-align:middle;white-space:nowrap;background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)">' + _rLabel + '</span>';
     }
 
     return`<tr style="cursor:pointer" onclick="verMaquina(${eq.id})">
@@ -7546,9 +7524,8 @@ function renderFrota(){
       <td style="color:var(--text2);font-size:11px">${highlight(eq.fabricante||'—',q)}</td>
       <td style="font-size:11px;color:var(--text3);text-transform:capitalize">${eq.tipo||'—'}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px">${eq.horimetro}h${diasTxt}</td>
-      <td>${sbadge(eq.status)}</td>
+      <td>${sbadge(eq.status)}${rBadge}</td>
       <td>${clienteTxt}</td>
-      ${rCell}
       ${seguroBtn}
     </tr>`;
   }).join('')}</tbody>`;
@@ -7797,11 +7774,11 @@ function verMaquina(id){
           if(!_r){
             return `<button class="btn btn-ghost btn-sm" style="border-color:rgba(14,165,233,.4);color:var(--accent,#4fc3f7)" onclick="closeM('mMachine');abrirReserva(${eq.id})">🔓 Reservar</button>`;
           } else if(_r.uid === _uid){
-            return `<button class="btn btn-ghost btn-sm" style="border-color:rgba(14,165,233,.4);color:#4fc3f7" onclick="closeM('mMachine');abrirReserva(${eq.id})">🔒 Minha reserva</button>`;
+            return `<button class="btn btn-ghost btn-sm" style="border-color:rgba(14,165,233,.4);color:#4fc3f7" onclick="closeM('mMachine');abrirReserva(${eq.id})">🔒 ${(_r.cliente||'Minha reserva')}</button>`;
           } else if(_role === 'admin'){
-            return `<button class="btn btn-ghost btn-sm" style="border-color:rgba(239,68,68,.4);color:#ef4444" onclick="closeM('mMachine');abrirReserva(${eq.id})">🔒 Reservada · ${(_r.nome||_r.uid).split(' ')[0]}</button>`;
+            return `<button class="btn btn-ghost btn-sm" style="border-color:rgba(239,68,68,.4);color:#ef4444" onclick="closeM('mMachine');abrirReserva(${eq.id})">🔒 ${(_r.cliente||(_r.nome||'').split(' ')[0]||'Reservada')}</button>`;
           } else {
-            return `<button class="btn btn-ghost btn-sm" disabled style="opacity:.4;border-color:rgba(239,68,68,.3);color:#ef4444">🔒 Reservada · ${(_r.nome||_r.uid).split(' ')[0]}</button>`;
+            return `<button class="btn btn-ghost btn-sm" disabled style="opacity:.4;border-color:rgba(239,68,68,.3);color:#ef4444;cursor:default">🔒 ${(_r.cliente||'Reservada')}</button>`;
           }
         })()}
         <button class="btn btn-primary btn-sm" onclick="closeM('mMachine');openOSForNP('${np}')">+ Abrir OS</button>
