@@ -18583,7 +18583,7 @@ function _reRenderPage(){
 window.loadFromSupabase=function(){
   var tok=window.PCM_AUTH.token,cid=window.PCM_AUTH.company_id;
   if(!tok||!cid)return;
-  fetch(SB_URL+'/rest/v1/pcm_data?company_id=eq.'+cid+'&data_key=in.(pcmv3_eq,pcmv3_os,pcmv3_tc,pcmv3_loc,pcmv3_compras,pcmv3_prev_dados,pcmv3_agendamentos,pcmv3_kit_custom,pcmv3_qtdmin,pcmv3_hor_hist,pcmv3_dias_mnt,pcmv3_manutencao_interna,pcmv3_outros_modulos,pcmv3_chamados_mem,pcmv3_notas_pro,pcm_ck_modelos_v1,pcm_ck_historico_v1,pcm_ck_pendentes_v1,pcmv3_notificacoes)&select=data_key,data_value,updated_at&order=updated_at.desc',
+  fetch(SB_URL+'/rest/v1/pcm_data?company_id=eq.'+cid+'&data_key=in.(pcmv3_eq,pcmv3_os,pcmv3_pc,pcmv3_tc,pcmv3_loc,pcmv3_compras,pcmv3_prev_dados,pcmv3_agendamentos,pcmv3_kit_custom,pcmv3_qtdmin,pcmv3_hor_hist,pcmv3_dias_mnt,pcmv3_manutencao_interna,pcmv3_outros_modulos,pcmv3_chamados_mem,pcmv3_notas_pro,pcm_ck_modelos_v1,pcm_ck_historico_v1,pcm_ck_pendentes_v1,pcmv3_notificacoes)&select=data_key,data_value,updated_at&order=updated_at.desc',
     {headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok}})
   .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
   .then(function(rows){
@@ -18660,7 +18660,7 @@ window._refreshDashboardLegacy=function(){
   if(btn)btn.disabled=true;
   if(label)label.textContent='ATUALIZANDO...';
   if(icon)icon.style.animation='spin .7s linear infinite';
-  fetch(SB_URL+'/rest/v1/pcm_data?company_id=eq.'+cid+'&data_key=in.(pcmv3_eq,pcmv3_os,pcmv3_tc,pcmv3_loc,pcmv3_compras,pcmv3_prev_dados,pcmv3_agendamentos,pcmv3_kit_custom,pcmv3_qtdmin,pcmv3_hor_hist,pcmv3_dias_mnt,pcmv3_manutencao_interna,pcmv3_outros_modulos,pcmv3_chamados_mem,pcmv3_notas_pro,pcm_ck_modelos_v1,pcm_ck_historico_v1,pcm_ck_pendentes_v1,pcmv3_notificacoes)&select=data_key,data_value,updated_at&order=updated_at.desc',
+  fetch(SB_URL+'/rest/v1/pcm_data?company_id=eq.'+cid+'&data_key=in.(pcmv3_eq,pcmv3_os,pcmv3_pc,pcmv3_tc,pcmv3_loc,pcmv3_compras,pcmv3_prev_dados,pcmv3_agendamentos,pcmv3_kit_custom,pcmv3_qtdmin,pcmv3_hor_hist,pcmv3_dias_mnt,pcmv3_manutencao_interna,pcmv3_outros_modulos,pcmv3_chamados_mem,pcmv3_notas_pro,pcm_ck_modelos_v1,pcm_ck_historico_v1,pcm_ck_pendentes_v1,pcmv3_notificacoes)&select=data_key,data_value,updated_at&order=updated_at.desc',
     {headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok}})
   .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
   .then(function(rows){
@@ -18717,7 +18717,7 @@ window.loadOS = async function(showFeedback){
   try {
     var res = await fetch(
       SB_URL + '/rest/v1/pcm_data?company_id=eq.' + auth.company_id +
-      '&data_key=in.(pcmv3_eq,pcmv3_os,pcmv3_tc,pcmv3_loc,pcmv3_compras,pcmv3_prev_dados,pcmv3_agendamentos,pcmv3_kit_custom,pcmv3_qtdmin,pcmv3_hor_hist,pcmv3_dias_mnt,pcmv3_manutencao_interna,pcmv3_outros_modulos,pcmv3_chamados_mem,pcmv3_notas_pro,pcm_ck_modelos_v1,pcm_ck_historico_v1,pcm_ck_pendentes_v1,pcmv3_notificacoes)&select=data_key,data_value,updated_at&order=updated_at.desc',
+      '&data_key=in.(pcmv3_eq,pcmv3_os,pcmv3_pc,pcmv3_tc,pcmv3_loc,pcmv3_compras,pcmv3_prev_dados,pcmv3_agendamentos,pcmv3_kit_custom,pcmv3_qtdmin,pcmv3_hor_hist,pcmv3_dias_mnt,pcmv3_manutencao_interna,pcmv3_outros_modulos,pcmv3_chamados_mem,pcmv3_notas_pro,pcm_ck_modelos_v1,pcm_ck_historico_v1,pcm_ck_pendentes_v1,pcmv3_notificacoes)&select=data_key,data_value,updated_at&order=updated_at.desc',
       { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + auth.token } }
     );
     if(!res.ok) throw new Error('HTTP ' + res.status);
@@ -18771,7 +18771,7 @@ window.refreshDashboard = async function(){
 
     var res = await fetch(
       SB_URL + '/rest/v1/pcm_data?company_id=eq.' + auth.company_id +
-      '&data_key=in.(pcmv3_eq,pcmv3_os,pcmv3_tc,pcmv3_loc,pcmv3_compras,pcmv3_prev_dados,pcmv3_agendamentos,pcmv3_kit_custom,pcmv3_qtdmin,pcmv3_hor_hist,pcmv3_dias_mnt,pcmv3_manutencao_interna,pcmv3_outros_modulos,pcmv3_chamados_mem,pcmv3_notas_pro,pcm_ck_modelos_v1,pcm_ck_historico_v1,pcm_ck_pendentes_v1,pcmv3_notificacoes)&select=data_key,data_value,updated_at&order=updated_at.desc',
+      '&data_key=in.(pcmv3_eq,pcmv3_os,pcmv3_pc,pcmv3_tc,pcmv3_loc,pcmv3_compras,pcmv3_prev_dados,pcmv3_agendamentos,pcmv3_kit_custom,pcmv3_qtdmin,pcmv3_hor_hist,pcmv3_dias_mnt,pcmv3_manutencao_interna,pcmv3_outros_modulos,pcmv3_chamados_mem,pcmv3_notas_pro,pcm_ck_modelos_v1,pcm_ck_historico_v1,pcm_ck_pendentes_v1,pcmv3_notificacoes)&select=data_key,data_value,updated_at&order=updated_at.desc',
       { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + auth.token } }
     );
     if(!res.ok) throw new Error('HTTP ' + res.status);
@@ -18864,7 +18864,7 @@ window._pcmSyncLocalToRemote = async function(){
   ];
   try {
     var res = await fetch(
-      SB_URL + '/rest/v1/pcm_data?company_id=eq.' + auth.company_id + '&data_key=in.(pcmv3_eq,pcmv3_os,pcmv3_tc,pcmv3_loc,pcmv3_compras,pcmv3_prev_dados,pcmv3_agendamentos,pcmv3_kit_custom,pcmv3_qtdmin,pcmv3_hor_hist,pcmv3_dias_mnt,pcmv3_manutencao_interna,pcmv3_outros_modulos,pcmv3_chamados_mem,pcmv3_notas_pro,pcm_ck_modelos_v1,pcm_ck_historico_v1,pcm_ck_pendentes_v1,pcmv3_notificacoes)&select=data_key,data_value',
+      SB_URL + '/rest/v1/pcm_data?company_id=eq.' + auth.company_id + '&data_key=in.(pcmv3_eq,pcmv3_os,pcmv3_pc,pcmv3_tc,pcmv3_loc,pcmv3_compras,pcmv3_prev_dados,pcmv3_agendamentos,pcmv3_kit_custom,pcmv3_qtdmin,pcmv3_hor_hist,pcmv3_dias_mnt,pcmv3_manutencao_interna,pcmv3_outros_modulos,pcmv3_chamados_mem,pcmv3_notas_pro,pcm_ck_modelos_v1,pcm_ck_historico_v1,pcm_ck_pendentes_v1,pcmv3_notificacoes)&select=data_key,data_value',
       { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + auth.token } }
     );
     if(!res.ok) return;
@@ -18999,7 +18999,7 @@ async function _sbSave(key, value){
 async function _sbLoadAll(){
   var res = await fetch(
     SB_URL + '/rest/v1/pcm_data?company_id=eq.' + _cid() +
-    '&data_key=in.(pcmv3_eq,pcmv3_os,pcmv3_tc,pcmv3_loc,pcmv3_compras,pcmv3_prev_dados,pcmv3_agendamentos,pcmv3_kit_custom,pcmv3_qtdmin,pcmv3_hor_hist,pcmv3_dias_mnt,pcmv3_manutencao_interna,pcmv3_outros_modulos,pcmv3_chamados_mem,pcmv3_notas_pro,pcm_ck_modelos_v1,pcm_ck_historico_v1,pcm_ck_pendentes_v1,pcmv3_notificacoes)&select=data_key,data_value,updated_at&order=updated_at.desc',
+    '&data_key=in.(pcmv3_eq,pcmv3_os,pcmv3_pc,pcmv3_tc,pcmv3_loc,pcmv3_compras,pcmv3_prev_dados,pcmv3_agendamentos,pcmv3_kit_custom,pcmv3_qtdmin,pcmv3_hor_hist,pcmv3_dias_mnt,pcmv3_manutencao_interna,pcmv3_outros_modulos,pcmv3_chamados_mem,pcmv3_notas_pro,pcm_ck_modelos_v1,pcm_ck_historico_v1,pcm_ck_pendentes_v1,pcmv3_notificacoes)&select=data_key,data_value,updated_at&order=updated_at.desc',
     { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + _tok() } }
   );
   if(!res.ok) throw new Error('HTTP ' + res.status);
@@ -19010,7 +19010,7 @@ function _fetchAndApply(tok, cid, showToast, forceRender){
   if(!tok || !cid) return Promise.resolve();
   return fetch(
     SB_URL + '/rest/v1/pcm_data?company_id=eq.' + cid +
-    '&data_key=in.(pcmv3_eq,pcmv3_os,pcmv3_tc,pcmv3_loc,pcmv3_compras,pcmv3_prev_dados,pcmv3_agendamentos,pcmv3_kit_custom,pcmv3_qtdmin,pcmv3_hor_hist,pcmv3_dias_mnt,pcmv3_manutencao_interna,pcmv3_outros_modulos,pcmv3_chamados_mem,pcmv3_notas_pro,pcm_ck_modelos_v1,pcm_ck_historico_v1,pcm_ck_pendentes_v1,pcmv3_notificacoes)&select=data_key,data_value,updated_at&order=updated_at.desc',
+    '&data_key=in.(pcmv3_eq,pcmv3_os,pcmv3_pc,pcmv3_tc,pcmv3_loc,pcmv3_compras,pcmv3_prev_dados,pcmv3_agendamentos,pcmv3_kit_custom,pcmv3_qtdmin,pcmv3_hor_hist,pcmv3_dias_mnt,pcmv3_manutencao_interna,pcmv3_outros_modulos,pcmv3_chamados_mem,pcmv3_notas_pro,pcm_ck_modelos_v1,pcm_ck_historico_v1,pcm_ck_pendentes_v1,pcmv3_notificacoes)&select=data_key,data_value,updated_at&order=updated_at.desc',
     { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + tok } }
   )
   .then(function(r){
@@ -19185,7 +19185,7 @@ window._pcmSyncLocalToRemote = async function(){
   ];
   try {
     var res = await fetch(
-      SB_URL + '/rest/v1/pcm_data?company_id=eq.' + _cid() + '&data_key=in.(pcmv3_eq,pcmv3_os,pcmv3_tc,pcmv3_loc,pcmv3_compras,pcmv3_prev_dados,pcmv3_agendamentos,pcmv3_kit_custom,pcmv3_qtdmin,pcmv3_hor_hist,pcmv3_dias_mnt,pcmv3_manutencao_interna,pcmv3_outros_modulos,pcmv3_chamados_mem,pcmv3_notas_pro,pcm_ck_modelos_v1,pcm_ck_historico_v1,pcm_ck_pendentes_v1,pcmv3_notificacoes)&select=data_key,data_value',
+      SB_URL + '/rest/v1/pcm_data?company_id=eq.' + _cid() + '&data_key=in.(pcmv3_eq,pcmv3_os,pcmv3_pc,pcmv3_tc,pcmv3_loc,pcmv3_compras,pcmv3_prev_dados,pcmv3_agendamentos,pcmv3_kit_custom,pcmv3_qtdmin,pcmv3_hor_hist,pcmv3_dias_mnt,pcmv3_manutencao_interna,pcmv3_outros_modulos,pcmv3_chamados_mem,pcmv3_notas_pro,pcm_ck_modelos_v1,pcm_ck_historico_v1,pcm_ck_pendentes_v1,pcmv3_notificacoes)&select=data_key,data_value',
       { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + _tok() } }
     );
     if(!res.ok) return;
